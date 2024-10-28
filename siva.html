@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register for CloudNova Exam  </title>
+    <style>
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .selected {
+            background-color: #2E8B57; /* Darker green to indicate selection */
+        }
+        .center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <script>
+        let registeredUser = {};
+        let userAnswers = [];  // To keep track of selected answers
+
+        function showRegisterForm() {
+            document.getElementById("register-form").style.display = "block";
+            document.getElementById("login-form").style.display = "none";
+            document.getElementById("exam-section").style.display = "none";
+            document.getElementById("action-buttons").style.display = "none";
+        }
+
+        function showLoginForm() {
+            document.getElementById("register-form").style.display = "none";
+            document.getElementById("login-form").style.display = "block";
+            document.getElementById("exam-section").style.display = "none";
+            document.getElementById("action-buttons").style.display = "none";
+        }
+
+        function registerUser() {
+            const name = document.getElementById("reg-name").value;
+            const email = document.getElementById("reg-email").value;
+            const password = document.getElementById("reg-password").value;
+            
+            if (name && email && password) {
+                registeredUser = { name, email, password };
+                alert("Registration Completed!");
+                showLoginForm();
+            } else {
+                alert("Please fill in all fields!");
+            }
+        }
+
+        function loginUser() {
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+            
+            if (email === registeredUser.email && password === registeredUser.password) {
+                alert("Login Successful!");
+                showExamSection();
+            } else {
+                alert("Invalid email or password!");
+            }
+        }
+
+        function showExamSection() {
+            document.getElementById("register-form").style.display = "none";
+            document.getElementById("login-form").style.display = "none";
+            document.getElementById("exam-section").style.display = "block";
+            loadQuestion();
+            startTimer();
+        }
+
+        let timeLeft = 60;
+        let timer;
+        function startTimer() {
+            timeLeft = 60;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    nextQuestion();
+                } else {
+                    document.getElementById("timer").innerText = `Time Left: ${timeLeft} seconds`;
+                    timeLeft -= 1;
+                }
+            }, 1000);
+        }
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const questions = [
+            { text: "What is Cloud?", options: ["Data Storage", "Programming", "AI Tool", "None"], correct: 0 },
+            { text: "What is AWS?", options: ["Web Services", "Storage Device", "Software", "None"], correct: 0 },
+            { text: "What is DevOps?", options: ["Data Analysis", "Cloud Storage", "Collaboration", "None"], correct: 2 },
+            { text: "Which language is used for web apps?", options: ["PHP", "Python", "JavaScript", "All of the above"], correct: 3 },
+            { text: "What is the correct syntax to output 'Hello World' in Python?", options: ["echo 'Hello World'", "print('Hello World')", "console.log('Hello World')", "document.write('Hello World')"], correct: 1 },
+            { text: "Which protocol is used to securely browse the internet?", options: ["FTP", "HTTP", "SMTP", "HTTPS"], correct: 3 },
+            { text: "What does SQL stand for?", options: ["Structured Query Language", "Strong Question Language", "Structured Question Language", "Strong Query Language"], correct: 0 },
+            { text: "Which tool is commonly used for version control in programming?", options: ["Git", "Azure", "Docker", "Jenkins"], correct: 0 },
+            { text: "What does AWS stand for?", options: ["Amazon Web Services", "Amazon Wide Services", "Amazon Work Space", "Amazon Web Storage"], correct: 0 },
+            { text: "Which of these is a NoSQL database?", options: ["MySQL", "SQL Server", "MongoDB", "PostgreSQL"], correct: 2 }
+        ];
+
+        function loadQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const question = questions[currentQuestionIndex];
+                document.getElementById("question-text").innerText = question.text;
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`option${i}`).innerText = question.options[i];
+                    document.getElementById(`option${i}`).classList.remove('selected');
+                }
+                startTimer();
+            } else {
+                endExam();
+            }
+        }
+
+        function selectOption(optionIndex) {
+            userAnswers[currentQuestionIndex] = optionIndex;
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`option${i}`).classList.remove('selected');
+            }
+            document.getElementById(`option${optionIndex}`).classList.add('selected');
+            if (optionIndex === questions[currentQuestionIndex].correct) {
+                score += 1;
+            }
+        }
+
+        function nextQuestion() {
+            clearInterval(timer);
+            currentQuestionIndex += 1;
+            loadQuestion();
+        }
+
+        function endExam() {
+            document.getElementById("exam-section").innerHTML = `<h2>Exam Completed</h2><p>Your Score: ${score}/${questions.length}</p>`;
+            fetch("/submit_exam", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ score, userAnswers })
+            })
+            .catch(error => console.error('Error submitting exam:', error));
+        }
+    </script>
+</head>
+<body class="center">
+    <h2>CloudNova Exam Portal</h2>
+    <div id="action-buttons">
+        <button onclick="showRegisterForm()">Register</button>
+        <button onclick="showLoginForm()">Login</button>
+    </div>
+
+    <div id="register-form" style="display:none;">
+        <h3>Register for the CloudNova Exam</h3>
+        <div>
+            <label>Name:</label><br>
+            <input type="text" id="reg-name"><br><br>
+            <label>Email:</label><br>
+            <input type="email" id="reg-email"><br><br>
+            <label>Password:</label><br>
+            <input type="password" id="reg-password"><br><br>
+            <button onclick="registerUser()">Register</button>
+        </div>
+    </div>
+
+    <div id="login-form" style="display:none;">
+        <h3>Login to Start the Exam</h3>
+        <div>
+            <label>Email:</label><br>
+            <input type="email" id="login-email"><br><br>
+            <label>Password:</label><br>
+            <input type="password" id="login-password"><br><br>
+            <button onclick="loginUser()">Login</button>
+        </div>
+    </div>
+
+    <div id="exam-section" style="display:none;">
+        <h3>Exam</h3>
+        <p id="timer">Time Left: 60 seconds</p>
+        <div id="question">
+            <p id="question-text">Question text goes here...</p>
+            <button id="option0" onclick="selectOption(0)">Option 1</button><br>
+            <button id="option1" onclick="selectOption(1)">Option 2</button><br>
+            <button id="option2" onclick="selectOption(2)">Option 3</button><br>
+            <button id="option3" onclick="selectOption(3)">Option 4</button><br><br>
+            <button onclick="nextQuestion()">Next</button>
+        </div>
+    </div>
+</body>
+</html>
